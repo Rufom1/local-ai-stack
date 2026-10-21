@@ -1,0 +1,35 @@
+# Phase 1 template. Intentionally not tested on user's desktop.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    ports:
+      - "127.0.0.1:${OPEN_WEBUI_PORT:-3000}:8080"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEBUI_AUTH: "true"
+      # Set your private secret in .env before deployment if desired.
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:-}
+    volumes:
+      - open_webui_data:/app/backend/data
+
+volumes:
+  ollama_models:
+  open_webui_data:
